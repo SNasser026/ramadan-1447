@@ -67,66 +67,6 @@ tbody td:first-child{ background:var(--first-col); color:#fff; font-weight:700; 
 </div>
 
 <script>
-// ===============================
-//   GitHub API – تحديث data.json
-// ===============================
-async function updateGitHubFile(newData) {
-
-  // -----------------------------
-  // اطلب التوكن مرة واحدة فقط
-  // -----------------------------
-  const token = localStorage.getItem("github_token") || prompt("أدخل GitHub Token:");
-  localStorage.setItem("github_token", token);
-
-  // -----------------------------
-  // 🔧 عدّل هذه القيم ↓↓↓
-  // -----------------------------
-  const username = "SNasser026";     // ← ضع اسم مستخدم GitHub
-  const repo     = "ramadan1447";    // ← اسم المستودع
-  const branch   = "main";           // ← فرعك
-  const path     = "data.json";      // ← ثابت
-
-  // 1) الحصول على SHA للملف
-  const fileRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}?ref=${branch}`);
-
-  if (!fileRes.ok) {
-    alert("لا يمكن الوصول إلى data.json في GitHub ❌");
-    return;
-  }
-
-  const fileData = await fileRes.json();
-  const sha = fileData.sha;
-
-  // 2) تجهيز البيانات
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
-
-  // 3) رفع التحديث
-  const updateRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      message: "Update Ramadan schedule",
-      content: encoded,
-      sha: sha,
-      branch: branch
-    })
-  });
-
-  if (updateRes.ok) {
-    document.getElementById("saveMessage").style.display = "inline";
-    setTimeout(() => { document.getElementById("saveMessage").style.display = "none"; }, 2000);
-  } else {
-    alert("خطأ أثناء الحفظ إلى GitHub ❌");
-  }
-}
-
-
-// ===============================
-//      عرض الجدول عند الفتح
-// ===============================
 document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#mainTable tbody");
   const TOTAL_DAYS = 30;
@@ -188,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // زر الطباعة
   document.getElementById("printBtn").addEventListener("click", () => window.print());
 
-  // زر الحفظ (GitHub API)
+  // زر الحفظ (PHP)
   document.getElementById("saveBtn").addEventListener("click", async () => {
     const rows = [];
     document.querySelectorAll("#mainTable tbody tr").forEach(tr => {
@@ -205,7 +145,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    await updateGitHubFile(rows);
+    const res = await fetch('save.php', {
+      method: 'POST',
+      body: JSON.stringify(rows)
+    });
+
+    const result = await res.json();
+    const msg = document.getElementById("saveMessage");
+    msg.textContent = result.message;
+    msg.style.display = "inline";
+    setTimeout(() => { msg.style.display = "none"; }, 2000);
   });
 });
 </script>
