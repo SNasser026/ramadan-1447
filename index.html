@@ -72,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (row.weekday === "الجمعة") tr.classList.add("friday");
 
       const tdDate = document.createElement("td");
-      tdDate.contentEditable = true;
       tdDate.textContent = row.date;
       tr.appendChild(tdDate);
 
@@ -89,12 +88,10 @@ document.addEventListener("DOMContentLoaded", () => {
       tr.appendChild(tdTime);
 
       const tdName = document.createElement("td");
-      tdName.contentEditable = true;
       tdName.textContent = row.name;
       tr.appendChild(tdName);
 
       const tdContact = document.createElement("td");
-      tdContact.contentEditable = true;
       tdContact.textContent = row.phone;
       tr.appendChild(tdContact);
 
@@ -103,10 +100,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fetchData() {
-    const res = await fetch('/data');
-    let data = await res.json();
-    if (data.length === 0) {
-      data = [];
+    try {
+      const res = await fetch('data.json');
+      let data = await res.json();
+      createRows(data);
+    } catch {
+      // في حال لم يوجد data.json، يتم توليد الجدول تلقائيًا
+      let data = [];
       for (let i = 1; i <= TOTAL_DAYS; i++) {
         const currentDate = new Date(START_DATE);
         currentDate.setDate(START_DATE.getDate() + (i - 1));
@@ -123,36 +123,16 @@ document.addEventListener("DOMContentLoaded", () => {
           phone: ""
         });
       }
-      await fetch('/data', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      createRows(data);
     }
-    createRows(data);
   }
 
   fetchData();
 
-  document.getElementById("saveBtn").addEventListener("click", async () => {
-    const trs = document.querySelectorAll("#mainTable tbody tr");
-    const rows = [];
-    trs.forEach(tr => {
-      const tds = tr.querySelectorAll("td");
-      const options = Array.from(tr.querySelector("select").options).map(o => o.value);
-      rows.push({
-        date: tds[0].textContent.trim(),
-        weekday: tr.classList.contains("friday") ? "الجمعة" : "",
-        time: tds[1].querySelector("select").value,
-        options: options,
-        name: tds[2].textContent.trim(),
-        phone: tds[3].textContent.trim()
-      });
-    });
-    await fetch('/data', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(rows) });
-    const saveMessage = document.getElementById("saveMessage");
-    saveMessage.style.display = "inline";
-    setTimeout(() => { saveMessage.style.display = "none"; }, 2000);
-  });
-
   document.getElementById("printBtn").addEventListener("click", () => window.print());
 });
 </script>
+
 </body>
 </html>
+
