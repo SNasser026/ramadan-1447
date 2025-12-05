@@ -4,44 +4,51 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>جدول محاضرات رمضان - جامع الإمام الربيع بن حبيب</title>
+
 <style>
-/* احتفظت بنفس CSS من الكود السابق */
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
 :root{
   --bg:#f0f4f2; --card:#ffffff; --accent:#1e8b63; --gold:#d4af37;
   --friday:#cfe3d6; --header-col:#49876d; --first-col:#49876d;
 }
-html, body{height:100%; margin:0; font-family:'Amiri', serif; background:var(--bg); color:#000; box-sizing:border-box;}
-*, *::before, *::after { box-sizing: inherit; }
+html, body{height:100%; margin:0; font-family:'Amiri', serif; background:var(--bg); color:#000;}
 .container{ width:95%; max-width:1000px; margin:20px auto; padding:10px; }
-.card{ background:var(--card); border-radius:14px; padding:1.5rem; border:4px solid var(--gold); box-shadow:0 8px 24px rgba(0,0,0,0.08); position:relative; }
-.card-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-#saveBtn, #printBtn { padding:0.5rem 1rem; border-radius:12px; cursor:pointer; font-weight:bold; color:#fff; font-size:1rem; border:none; margin:0.2rem; }
-#saveBtn { background: var(--gold); } #saveBtn:hover { background: #c49b2c; }
-#printBtn { background: var(--accent); } #printBtn:hover { background: #397155; }
-#saveMessage { color: green; font-weight: bold; display: none; margin-left: 0.5rem; }
+.card{ background:var(--card); border-radius:14px; padding:1.5rem; border:4px solid var(--gold); }
+.card-header { display:flex; justify-content:space-between; align-items:center; }
+
+#saveBtn, #printBtn {
+  padding:0.5rem 1rem; border-radius:12px; cursor:pointer; 
+  font-weight:bold; color:#fff; font-size:1rem; border:none; margin:0.2rem;
+}
+#saveBtn { background: var(--gold); }
+#printBtn { background: var(--accent); }
+
+#saveMessage { color: green; font-weight: bold; display:none; margin-left:8px; }
+
 .table-wrapper{ overflow-x:auto; }
-table{ width:100%; min-width:600px; border-collapse: collapse; font-size:1rem; background:#fff; border-radius:12px; border:1px solid var(--gold); }
-thead th{ background:var(--header-col); color:#fff; text-align:center; padding:0.8rem; font-size:1rem; border:1px solid #a9a9a9; }
-tbody td{ padding:0.6rem; text-align:center; border:1px solid #a9a9a9; }
-tbody tr:nth-child(odd){ background: rgba(211,211,211,0.2); }
-tbody tr:nth-child(even){ background: rgba(211,211,211,0.1); }
+table{ width:100%; border-collapse: collapse; background:#fff; border-radius:12px; }
+thead th{ background:var(--header-col); color:#fff; padding:0.8rem; border:1px solid #ccc; }
+tbody td{ padding:0.6rem; text-align:center; border:1px solid #ccc; }
+tbody tr:nth-child(odd){ background:#f9f9f9; }
 tbody tr.friday{ background-color:var(--friday) !important; }
 tbody td:first-child{ background:var(--first-col); color:#fff; font-weight:700; }
-table th:first-child, table td:first-child{ width:150px; }
 </style>
 </head>
+
 <body>
 <div class="container">
   <div class="card">
+    
     <div class="card-header">
       <div>
         <button id="saveBtn">💾 حفظ</button>
         <span id="saveMessage">تم الحفظ بنجاح ✅</span>
-        <button id="printBtn">🖨️ طباعة</button>
       </div>
+      <button id="printBtn">🖨️ طباعة</button>
     </div>
+
     <h1>جدول محاضرات رمضان 1447 هـ - جامع الإمام الربيع بن حبيب</h1>
+
     <div class="table-wrapper">
       <table id="mainTable">
         <thead>
@@ -55,68 +62,117 @@ table th:first-child, table td:first-child{ width:150px; }
         <tbody></tbody>
       </table>
     </div>
+
   </div>
 </div>
 
 <script>
+// ===============================
+//   GitHub API – تحديث data.json
+// ===============================
+async function updateGitHubFile(newData) {
+
+  // -----------------------------
+  // اطلب التوكن مرة واحدة فقط
+  // -----------------------------
+  const token = localStorage.getItem("github_token") || prompt("أدخل GitHub Token:");
+  localStorage.setItem("github_token", token);
+
+  // -----------------------------
+  // 🔧 عدّل هذه القيم ↓↓↓
+  // -----------------------------
+  const username = "SNasser026";     // ← ضع اسم مستخدم GitHub
+  const repo     = "ramadan1447";    // ← اسم المستودع
+  const branch   = "main";           // ← فرعك
+  const path     = "data.json";      // ← ثابت
+
+  // 1) الحصول على SHA للملف
+  const fileRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}?ref=${branch}`);
+
+  if (!fileRes.ok) {
+    alert("لا يمكن الوصول إلى data.json في GitHub ❌");
+    return;
+  }
+
+  const fileData = await fileRes.json();
+  const sha = fileData.sha;
+
+  // 2) تجهيز البيانات
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
+
+  // 3) رفع التحديث
+  const updateRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      message: "Update Ramadan schedule",
+      content: encoded,
+      sha: sha,
+      branch: branch
+    })
+  });
+
+  if (updateRes.ok) {
+    document.getElementById("saveMessage").style.display = "inline";
+    setTimeout(() => { document.getElementById("saveMessage").style.display = "none"; }, 2000);
+  } else {
+    alert("خطأ أثناء الحفظ إلى GitHub ❌");
+  }
+}
+
+
+// ===============================
+//      عرض الجدول عند الفتح
+// ===============================
 document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#mainTable tbody");
   const TOTAL_DAYS = 30;
   const START_DATE = new Date(2026, 1, 18);
   const weekdays = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 
-  function createRows(data) {
+  function createRows(data){
     tbody.innerHTML = "";
     data.forEach(row => {
       const tr = document.createElement("tr");
       if (row.weekday === "الجمعة") tr.classList.add("friday");
 
-      const tdDate = document.createElement("td");
-      tdDate.textContent = row.date;
-      tr.appendChild(tdDate);
-
-      const tdTime = document.createElement("td");
-      const selectTime = document.createElement("select");
-      row.options.forEach(opt => {
-        const option = document.createElement("option");
-        option.value = opt;
-        option.textContent = opt;
-        if (opt === row.time) option.selected = true;
-        selectTime.appendChild(option);
-      });
-      tdTime.appendChild(selectTime);
-      tr.appendChild(tdTime);
-
-      const tdName = document.createElement("td");
-      tdName.textContent = row.name;
-      tr.appendChild(tdName);
-
-      const tdContact = document.createElement("td");
-      tdContact.textContent = row.phone;
-      tr.appendChild(tdContact);
+      tr.innerHTML = `
+        <td contenteditable="true">${row.date}</td>
+        <td>
+          <select>
+            ${row.options.map(o => `<option ${o === row.time ? "selected" : ""}>${o}</option>`).join("")}
+          </select>
+        </td>
+        <td contenteditable="true">${row.name}</td>
+        <td contenteditable="true">${row.phone}</td>
+      `;
 
       tbody.appendChild(tr);
     });
   }
 
-  async function fetchData() {
+  async function fetchData(){
     try {
-      const res = await fetch('data.json');
-      let data = await res.json();
+      const res = await fetch("data.json");
+      const data = await res.json();
       createRows(data);
     } catch {
-      // في حال لم يوجد data.json، يتم توليد الجدول تلقائيًا
       let data = [];
       for (let i = 1; i <= TOTAL_DAYS; i++) {
-        const currentDate = new Date(START_DATE);
-        currentDate.setDate(START_DATE.getDate() + (i - 1));
-        const weekdayName = weekdays[currentDate.getDay()];
-        const options = (weekdayName === "الجمعة")
-          ? ["بعد صلاة الجمعة", "بعد صلاة العصر", "بعد صلاة المغرب", "بعد صلاة العشاء"]
-          : ["بعد صلاة العصر", "بعد صلاة الظهر", "بعد صلاة المغرب", "بعد صلاة العشاء"];
+        const d = new Date(START_DATE);
+        d.setDate(START_DATE.getDate() + (i - 1));
+        const w = weekdays[d.getDay()];
+
+        const options = (w === "الجمعة")
+          ? ["بعد صلاة الجمعة","بعد صلاة العصر","بعد صلاة المغرب","بعد صلاة العشاء"]
+          : ["بعد صلاة الظهر","بعد صلاة العصر","بعد صلاة المغرب","بعد صلاة العشاء"];
+
         data.push({
-          date: `${currentDate.getDate()}/${currentDate.getMonth()+1}/${currentDate.getFullYear()} - ${weekdayName} - رمضان ${i}`,
-          weekday: weekdayName,
+          date: `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} - ${w} - رمضان ${i}`,
+          weekday: w,
           time: options[0],
           options: options,
           name: "",
@@ -129,10 +185,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   fetchData();
 
+  // زر الطباعة
   document.getElementById("printBtn").addEventListener("click", () => window.print());
+
+  // زر الحفظ (GitHub API)
+  document.getElementById("saveBtn").addEventListener("click", async () => {
+    const rows = [];
+    document.querySelectorAll("#mainTable tbody tr").forEach(tr => {
+      const tds = tr.querySelectorAll("td");
+      const select = tr.querySelector("select");
+
+      rows.push({
+        date: tds[0].textContent.trim(),
+        weekday: tr.classList.contains("friday") ? "الجمعة" : "",
+        time: select.value,
+        options: Array.from(select.options).map(o => o.textContent),
+        name: tds[2].textContent.trim(),
+        phone: tds[3].textContent.trim()
+      });
+    });
+
+    await updateGitHubFile(rows);
+  });
 });
 </script>
 
 </body>
 </html>
-
